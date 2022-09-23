@@ -8,12 +8,16 @@ const { logger } = require('./middleware/logEvents');
 const corsOptions = require('./config/corsOptions');
 const errorHandler = require('./middleware/errorHandler');
 const connectDB = require('./config/dbConn');
+const credentials = require('./config/credentials');
+const verifyJWT = require('./middleware/verifyJWT.js');
 
 connectDB();
 
 const PORT = process.env.PORT || 3500;
 
 app.use(logger);
+
+app.use(credentials);
 
 app.use(cors(corsOptions));
 
@@ -25,6 +29,16 @@ app.use(express.json());
 
 app.use('/register', require('./routes/register'));
 app.use('/login', require('./routes/login'));
+app.use('/refresh', require('./routes/refresh'));
+
+app.use(verifyJWT);
+app.use('/createnote', require('./routes/createNote'));
+app.use('/updatenote', require('./routes/updateNote'));
+app.use('/deletenote', require('./routes/deleteNote'));
+
+app.all('*', (req, res) => {
+    res.sendStatus(404);
+});
 
 app.use(errorHandler);
 

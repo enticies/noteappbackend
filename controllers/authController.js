@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const { nextDay } = require('date-fns');
 const { default: mongoose } = require('mongoose');
 
@@ -34,6 +35,7 @@ const handleRegister =  async (req, res) => {
 }
 
 const handleLogin = async (req, res) => {
+
     const { username, password } = req?.body;
 
     if (!username || !password) {
@@ -43,16 +45,49 @@ const handleLogin = async (req, res) => {
     const foundUser = await User.findOne({ username });
 
     if (!foundUser) {
-        return res.status(401);
+        return res.sendStatus(401);
     }
 
-    const match = await bcrypt.compare(pwd, foundUser.password);
+    const match = await bcrypt.compare(password, foundUser.password);
 
     if (match) {
+        const accessToken = jwt.sign(
+            {
+                'UserInfo': {
+                    'username': foundUser.username,
+                }
+            },
+            process.env.ACCESS_TOKEN_SECRET,
+            {
+                expiresIn: '10m'
+            }
+        );
 
+        const refreshToken = jwt.sign(
+            {
+                'username': foundUser.username
+            },
+            process.env.REFRESH_TOKEN_SECRET,
+            {
+                expiresIn: '1d'
+            }
+        );
+
+        foundUser.refreshToken = refreshToken;
+        const result = await foundUser.save();
+        console.log(result);
+
+        res.cookie('jwt', refreshToken, {
+            httpOnly: true,
+            secure: true,
+            sameSide: 'None',
+            maxAge: 24 * 60 * 60 * 1000
+        });
+
+        return res.json({ accessToken });
     }
     else {
-        return res.status(401);
+        return res.sendStatus(401);
     }
 
 
