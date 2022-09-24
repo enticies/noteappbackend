@@ -9,6 +9,10 @@ const noteSchema = new Schema({
     body: {
         type: String,
         default: ""
+    },
+    username: {
+        type: String,
+        required: true,
     }
 });
 

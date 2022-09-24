@@ -1,11 +1,37 @@
 const Note = require('../../models/Note');
+const User = require('../../models/User');
 const { default: mongoose } = require('mongoose');
+const jwt = require('jsonwebtoken');
 
 const handleCreate = async (req, res) => {
+    let username = null;
+
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(
+        token,
+        process.env.ACCESS_TOKEN_SECRET,
+        (err, decoded) => {
+            username = decoded.UserInfo.username;
+        }
+    );
+    
+    if (!username) {
+        return res.sendStatus(400);
+    }
+
+    const foundUser = await User.findOne({ username });
+    if (!foundUser) {
+        return res.sendStatus(404);
+    }
+
     try {
         await Note.create({
             title: "",
-            body: ""
+            body: "",
+            username: username
         });
         res.sendStatus(201);
     }
@@ -15,20 +41,38 @@ const handleCreate = async (req, res) => {
 }
 
 const handleUpdate = async (req, res) => {
-    const { id, title, body } = req?.body;
+    let username = null;
 
-    if (!id || !title || !body) {
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(
+        token,
+        process.env.ACCESS_TOKEN_SECRET,
+        (err, decoded) => {
+            username = decoded.UserInfo.username;
+        }
+    );
+
+    const { noteId, title, body } = req?.body;
+
+    if (!noteId || !title || !body) {
         return res.sendStatus(400);
     }
 
-    if (!mongoose.isValidObjectId(id)) {
+    if (!mongoose.isValidObjectId(noteId)) {
         return res.status(400).json({ 'message': 'Invalid object id.' });
     }
 
-    const match = await Note.findById(id);
+    const match = await Note.findById(noteId);
 
     if (!match) {
         return res.sendStatus(404);
+    }
+
+    if (match.username !== username) {
+        return res.sendStatus(400);
     }
 
     try {
@@ -44,20 +88,39 @@ const handleUpdate = async (req, res) => {
 }
 
 const handleDelete = async (req, res) => {
-    const { id } = req?.body;
+    let username = null;
 
-    if (!id) {
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(
+        token,
+        process.env.ACCESS_TOKEN_SECRET,
+        (err, decoded) => {
+            username = decoded.UserInfo.username;
+        }
+    );
+
+
+    const { noteId } = req?.body;
+
+    if (!noteId) {
         return res.sendStatus(400);
     }
 
-    if (!mongoose.isValidObjectId(id)) {
+    if (!mongoose.isValidObjectId(noteId)) {
         return res.status(400).json({ 'message': 'Invalid object id.' });
     }
 
-    const match = await Note.findById(id);
+    const match = await Note.findById(noteId);
 
     if (!match) {
         return res.sendStatus(404);
+    }
+
+    if (match.username !== username) {
+        return res.sendStatus(400);
     }
 
     try {
@@ -69,8 +132,33 @@ const handleDelete = async (req, res) => {
     }
 }
 
+const getUserNotes = async (req, res) => {
+    let username = null;
+
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(
+        token,
+        process.env.ACCESS_TOKEN_SECRET,
+        (err, decoded) => {
+            username = decoded.UserInfo.username;
+        }
+    );
+
+    try {
+        const notes = await Note.find({ username });
+        return res.status(200).json(notes);
+    }
+    catch (err) {
+        return res.status(500).json({ 'message': err });
+    }
+}
+
 module.exports = {
     handleCreate,
     handleUpdate,
-    handleDelete
+    handleDelete,
+    getUserNotes
 }

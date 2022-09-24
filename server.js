@@ -35,6 +35,7 @@ app.use(verifyJWT);
 app.use('/createnote', require('./routes/createNote'));
 app.use('/updatenote', require('./routes/updateNote'));
 app.use('/deletenote', require('./routes/deleteNote'));
+app.use('/getusernotes', require('./routes/getUserNotes'));
 
 app.all('*', (req, res) => {
     res.sendStatus(404);
