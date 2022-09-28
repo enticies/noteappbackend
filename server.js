@@ -10,6 +10,7 @@ const errorHandler = require('./middleware/errorHandler');
 const connectDB = require('./config/dbConn');
 const credentials = require('./config/credentials');
 const verifyJWT = require('./middleware/verifyJWT.js');
+const cookieParser = require('cookie-parser');
 
 connectDB();
 
@@ -18,6 +19,7 @@ const PORT = process.env.PORT || 3500;
 app.use(logger);
 
 app.use(credentials);
+app.use(cookieParser());
 
 app.use(cors(corsOptions));
 

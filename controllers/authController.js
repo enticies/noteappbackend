@@ -59,7 +59,7 @@ const handleLogin = async (req, res) => {
             },
             process.env.ACCESS_TOKEN_SECRET,
             {
-                expiresIn: '10m'
+                expiresIn: '50m'
             }
         );
 
@@ -80,8 +80,8 @@ const handleLogin = async (req, res) => {
         res.cookie('jwt', refreshToken, {
             httpOnly: true,
             secure: true,
-            sameSide: 'None',
-            maxAge: 24 * 60 * 60 * 1000
+            sameSite: 'None',
+            maxAge: 24 * 60 * 60 * 1000,
         });
 
         return res.json({ accessToken });

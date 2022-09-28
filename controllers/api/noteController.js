@@ -28,12 +28,16 @@ const handleCreate = async (req, res) => {
     }
 
     try {
-        await Note.create({
+        const newNote = await Note.create({
             title: "",
             body: "",
             username: username
         });
-        res.sendStatus(201);
+        return res.status(201).json({ 
+            _id: newNote._id,
+            title: newNote.title,
+            body: newNote.body,
+        });
     }
     catch (err) {
         res.status(500).json({ 'message': err.message });
@@ -55,17 +59,17 @@ const handleUpdate = async (req, res) => {
         }
     );
 
-    const { noteId, title, body } = req?.body;
+    const { id, title, body } = req?.body;
 
-    if (!noteId || !title || !body) {
-        return res.sendStatus(400);
+    if (!id || (title === null || title === undefined) || (body === null || body === undefined)) {
+        return res.status(400).json({ 'message': 'Id, title, and body are required.'});
     }
 
-    if (!mongoose.isValidObjectId(noteId)) {
+    if (!mongoose.isValidObjectId(id)) {
         return res.status(400).json({ 'message': 'Invalid object id.' });
     }
 
-    const match = await Note.findById(noteId);
+    const match = await Note.findById(id);
 
     if (!match) {
         return res.sendStatus(404);
@@ -80,6 +84,7 @@ const handleUpdate = async (req, res) => {
         match.body = body;
 
         await match.save();
+        console.log('object');
         return res.sendStatus(204);
     }
     catch (err) {
@@ -103,17 +108,18 @@ const handleDelete = async (req, res) => {
     );
 
 
-    const { noteId } = req?.body;
+    const { id } = req?.body;
 
-    if (!noteId) {
+
+    if (!id) {
         return res.sendStatus(400);
     }
 
-    if (!mongoose.isValidObjectId(noteId)) {
+    if (!mongoose.isValidObjectId(id)) {
         return res.status(400).json({ 'message': 'Invalid object id.' });
     }
 
-    const match = await Note.findById(noteId);
+    const match = await Note.findById(id);
 
     if (!match) {
         return res.sendStatus(404);
@@ -128,6 +134,7 @@ const handleDelete = async (req, res) => {
         res.sendStatus(204);
     }
     catch (err) {
+        console.log(req.body);
         return res.status(500).json({ 'message': err });
     }
 }
@@ -148,7 +155,7 @@ const getUserNotes = async (req, res) => {
     );
 
     try {
-        const notes = await Note.find({ username });
+        const notes = await Note.find({ username }).select('_id title body');
         return res.status(200).json(notes);
     }
     catch (err) {
